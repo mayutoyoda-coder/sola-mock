@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SOLA</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --bg2:#f3f5f7; --ink:#2b3036; --ink2:#8d939b; --line:#e9ecef;
+  --accent:#a9d3ee; --accent-ink:#2f6f96;
+  --r:24px; --tab:calc(64px + env(safe-area-inset-bottom)); --sat:env(safe-area-inset-top);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{font-family:'Zen Maru Gothic',system-ui,-apple-system,"Hiragino Maru Gothic ProN",sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+/* phone frame */
+.phone{position:relative;width:100%;height:100dvh;overflow:hidden;background:var(--bg)}
+@media (min-width:600px){
+  body{background:#e6e9ee;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .phone{width:390px;height:844px;border-radius:50px;border:10px solid #1b1d21;box-shadow:0 30px 70px rgba(0,0,0,.28);transform-origin:center}
+  .phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#1b1d21;z-index:50;pointer-events:none}
+  :root{--sat:34px}
+}
+
+/* screens */
+.screen{position:absolute;left:0;right:0;top:0;bottom:var(--tab);display:none;flex-direction:column;overflow:hidden;background:var(--bg)}
+.screen.active{display:flex}
+.screen.full{bottom:0;z-index:20;background:#111}
+.top{padding:calc(14px + var(--sat)) 20px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.top h1{font-size:20px;font-weight:500}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 20px 28px}
+.chip{font-size:13px;color:var(--ink2);background:var(--bg2);padding:6px 12px;border-radius:999px;white-space:nowrap}
+.chip.light{background:rgba(255,255,255,.75);color:var(--ink);backdrop-filter:blur(8px)}
+.date{font-size:15px;color:var(--ink2)}
+.btn{border:none;border-radius:999px;padding:14px 28px;font-weight:700;font-size:15px;background:var(--accent);color:#1f5f85;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:transparent;color:var(--ink2);font-weight:500}
+
+/* home */
+.home-empty{flex:1;display:flex;flex-direction:column}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding-bottom:40px}
+.shoot-btn{width:214px;height:214px;border-radius:50%;border:none;background:radial-gradient(circle at 35% 28%,#f1f8fd 0%,#c6e2f4 55%,var(--accent) 100%);color:var(--accent-ink);font-size:20px;font-weight:700;line-height:1.5;box-shadow:0 14px 34px rgba(169,211,238,.5);transition:transform .15s}
+.shoot-btn:active{transform:scale(.95)}
+.hint{font-size:12px;color:var(--ink2)}
+.home-taken{position:absolute;inset:0}
+.hero{position:absolute;inset:0;background-size:cover;background-position:center}
+.top.over{position:absolute;left:0;right:0;top:0;z-index:2}
+.hero-info{position:absolute;left:0;right:0;bottom:0;padding:70px 24px 28px;background:linear-gradient(transparent,rgba(0,0,0,.4));color:#fff}
+.hero-info .big{font-size:30px;font-weight:700;letter-spacing:.04em}
+.hero-info .meta{font-size:13px;opacity:.9;margin-top:4px}
+.hero-info .retake{display:block;margin-top:14px;opacity:.75;text-underline-offset:4px}
+
+/* capture */
+.vf{position:absolute;inset:0;background-size:cover;background-position:center;animation:drift 14s ease-in-out infinite alternate}
+@keyframes drift{0%{transform:scale(1.05) translate(0,0)}50%{transform:scale(1.08) translate(-1%,1%)}100%{transform:scale(1.05) translate(1%,-.5%)}}
+.cap-top{position:absolute;top:calc(14px + var(--sat));left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;z-index:2}
+.pill{background:rgba(0,0,0,.32);color:#fff;font-size:12px;padding:7px 13px;border-radius:999px;backdrop-filter:blur(6px)}
+.xbtn{width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.32);color:#fff;font-size:22px;line-height:1;backdrop-filter:blur(6px)}
+.cap-bottom{position:absolute;left:0;right:0;bottom:0;padding:40px 24px calc(34px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:16px;z-index:2;background:linear-gradient(transparent,rgba(0,0,0,.38));color:#fff}
+.shutter{width:80px;height:80px;border-radius:50%;border:5px solid #fff;background:rgba(255,255,255,.2);padding:0;transition:transform .1s}
+.shutter::after{content:'';display:block;width:58px;height:58px;margin:6px auto;border-radius:50%;background:#fff}
+.shutter:active{transform:scale(.92)}
+.cap-bottom .hint{color:rgba(255,255,255,.9)}
+.linkbtn{background:none;border:none;color:#fff;font-size:13px;text-decoration:underline;text-underline-offset:3px;opacity:.9}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5;transition:opacity .25s}
+.cf-ph{position:absolute;inset:0;background-size:cover;background-position:center}
+.cf-bottom{position:absolute;left:0;right:0;bottom:0;padding:70px 24px calc(30px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:10px;z-index:2;background:linear-gradient(transparent,rgba(0,0,0,.4))}
+.btn.white{background:#fff;color:var(--accent-ink);padding:16px 40px;font-size:16px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.btn.ghost.onphoto{color:#fff}
+
+/* calendar */
+.seg{display:flex;background:var(--bg2);border-radius:999px;padding:3px}
+.seg button{border:none;background:transparent;font-size:13px;padding:6px 14px;border-radius:999px;color:var(--ink2)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:6px 0 14px}
+.nav h2{font-size:18px;font-weight:500}
+.nav small{display:block;font-size:11px;color:var(--ink2);font-weight:400;margin-top:2px;text-align:center}
+.nav button{width:38px;height:38px;border-radius:50%;border:none;background:var(--bg2);font-size:18px;color:var(--ink2)}
+.wd{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;color:var(--ink2);text-align:center;margin-bottom:6px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cell{aspect-ratio:1;border-radius:10px;background:var(--bg2);position:relative;background-size:cover;background-position:center;border:none;padding:0;overflow:hidden}
+.cell.future{background:#fafbfc}
+.cell.has{cursor:pointer}
+.cell span{position:absolute;top:4px;left:6px;font-size:10px;color:var(--ink2)}
+.cell.future span{color:#c9ced4}
+.cell.has span{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.cell.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.ygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;padding-top:4px}
+.ym b{display:block;font-size:11px;color:var(--ink2);font-weight:400;margin-bottom:4px}
+.ym .g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.tile{aspect-ratio:1;border-radius:3px;background:var(--bg2);background-size:cover;background-position:center;border:none;padding:0}
+.tile.none{background:transparent}
+.tile.future{background:#f8f9fa}
+.tile.has{cursor:pointer}
+.sum{font-size:12px;color:var(--ink2);text-align:center;margin-top:14px}
+
+/* feed */
+.card{margin-bottom:20px}
+.ph-wrap{border-radius:var(--r);overflow:hidden;background:var(--bg2)}
+.card .ph{aspect-ratio:1;background-size:cover;background-position:center}
+.card .meta{display:flex;justify-content:space-between;padding:9px 8px 0;font-size:13px;color:var(--ink2)}
+.card .meta b{font-weight:500;color:var(--ink)}
+.locked .ph{filter:blur(18px);transform:scale(1.1)}
+.lock{position:absolute;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;padding:32px;z-index:3;background:rgba(255,255,255,.3)}
+.locked .lock{display:flex}
+.lock .box{background:#fff;border-radius:var(--r);padding:30px 26px;text-align:center;box-shadow:0 14px 44px rgba(0,0,0,.1);display:flex;flex-direction:column;gap:14px;align-items:center}
+.lock .box p{font-size:15px;line-height:1.7}
+.lock .box small{font-size:12px;color:var(--ink2)}
+
+/* tab bar */
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:var(--tab);display:flex;border-top:1px solid var(--line);background:rgba(255,255,255,.96);z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--ink2)}
+.tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.active{color:var(--accent-ink)}
+
+/* detail sheet */
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:14px 20px calc(30px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);z-index:31}
+.open .backdrop{opacity:1;pointer-events:auto}
+.open .sheet{transform:none}
+.handle{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+.sheet .ph{aspect-ratio:4/3;border-radius:20px;background-size:cover;background-position:center;margin-bottom:16px}
+.sheet h3{font-size:17px;font-weight:500}
+.sheet p{font-size:13px;color:var(--ink2);margin-top:4px}
+.sheet .btn{margin-top:18px;width:100%;background:var(--bg2);color:var(--ink2);font-weight:500}
+
+/* toast */
+.toast{position:absolute;left:50%;top:calc(66px + var(--sat));transform:translate(-50%,-16px);opacity:0;background:rgba(43,48,54,.9);color:#fff;font-size:13px;padding:10px 18px;border-radius:999px;z-index:40;transition:.25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- 1. 今日 -->
+  <section class="screen active" id="s-home">
+    <div class="home-empty" id="home-empty">
+      <div class="top"><span class="date" id="home-date"></span><span class="chip" id="home-streak"></span></div>
+      <div class="center">
+        <button class="shoot-btn" onclick="openCapture()">今日の空を<br>撮る</button>
+        <p class="hint">1日1枚。あとから撮り直すこともできます</p>
+      </div>
+    </div>
+    <div class="home-taken" id="home-taken" hidden>
+      <div class="hero" id="hero"></div>
+      <div class="top over"><span class="chip light" id="home-date2"></span><span class="chip light" id="home-streak2"></span></div>
+      <div class="hero-info">
+        <div class="big">また明日</div><div class="meta" id="hero-meta"></div>
+        <button class="linkbtn retake" onclick="openCapture()">撮り直す</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. カレンダー -->
+  <section class="screen" id="s-cal">
+    <div class="top">
+      <h1>カレンダー</h1>
+      <div class="seg"><button class="on" id="seg-m" onclick="setMode('month')">月</button><button id="seg-y" onclick="setMode('year')">年</button></div>
+    </div>
+    <div class="scroll" id="cal-body">
+      <div class="nav"><button onclick="navCal(-1)">‹</button><h2 id="cal-title"></h2><button onclick="navCal(1)">›</button></div>
+      <div id="cal-content"></div>
+    </div>
+  </section>
+
+  <!-- 4. みんなの空 -->
+  <section class="screen" id="s-feed">
+    <div class="top"><h1>みんなの空</h1><span class="chip" id="feed-date"></span></div>
+    <div class="scroll" id="feed-body"></div>
+    <div class="lock">
+      <div class="box">
+        <p>まず、今日の空を<br>撮りましょう</p>
+        <small>自分の空を残すと、みんなの空が見られます</small>
+        <button class="btn" onclick="openCapture()">今日の空を撮る</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2a. 撮影 -->
+  <section class="screen full" id="s-capture">
+    <div class="vf" id="vf"></div>
+    <div class="cap-top"><span class="pill" id="cap-pill">今日の空（1日1枚）</span><button class="xbtn" onclick="show('s-home')">×</button></div>
+    <div class="cap-bottom">
+      <p class="hint">空に向けて、シャッターを押してください</p>
+      <button class="shutter" aria-label="シャッター" onclick="shoot()"></button>
+      <button class="linkbtn" id="cam-btn" hidden onclick="document.getElementById('file').click()">カメラを起動して撮る</button>
+    </div>
+    <div class="flash" id="flash"></div>
+  </section>
+
+  <!-- 2b. 確認 -->
+  <section class="screen full" id="s-confirm">
+    <div class="cf-ph" id="cf-ph"></div>
+    <div class="cap-top"><span class="pill" id="cf-pill">この空でいいですか？</span></div>
+    <div class="cf-bottom">
+      <button class="btn white" onclick="save()">この空を残す</button>
+      <button class="btn ghost onphoto" onclick="show('s-capture')">やめる</button>
+    </div>
+  </section>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab active" data-screen="s-home" onclick="go('s-home')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg><span>今日</span>
+    </button>
+    <button class="tab" data-screen="s-cal" onclick="go('s-cal')">
+      <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>カレンダー</span>
+    </button>
+    <button class="tab" data-screen="s-feed" onclick="go('s-feed')">
+      <svg viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.5 9.6 4.5 4.5 0 0 0 7 18.5z"/></svg><span>みんなの空</span>
+    </button>
+  </nav>
+
+  <div id="detail">
+    <div class="backdrop" onclick="closeDetail()"></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="ph" id="dt-ph"></div>
+      <h3 id="dt-date"></h3>
+      <p id="dt-meta"></p>
+      <button class="btn" onclick="closeDetail()">閉じる</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <input type="file" id="file" accept="image/*" capture="environment" hidden>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const WD=['日','月','火','水','木','金','土'];
+const pad=n=>String(n).padStart(2,'0');
+const key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+const today=new Date();today.setHours(0,0,0,0);
+const TK=key(today);
+const fmtDate=(d,y)=>`${y?d.getFullYear()+'年':''}${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+
+/* 空の種類（CSSグラデーション） */
+const SKIES=[
+ {n:'朝焼け',bg:'linear-gradient(180deg,#f6c6b6 0%,#f29f84 45%,#f8c98f 100%)'},
+ {n:'青空（雲）',bg:'radial-gradient(ellipse 62% 16% at 72% 64%,rgba(255,255,255,.92),rgba(255,255,255,0) 72%),radial-gradient(ellipse 46% 13% at 24% 50%,rgba(255,255,255,.85),rgba(255,255,255,0) 72%),linear-gradient(180deg,#3d93d8 0%,#88c2ec 60%,#d7ebf8 100%)'},
+ {n:'快晴',bg:'linear-gradient(180deg,#2c83cd 0%,#76b7e7 55%,#cde5f6 100%)'},
+ {n:'薄曇り',bg:'linear-gradient(180deg,#b3bdc6 0%,#d4dbe1 55%,#edf0f3 100%)'},
+ {n:'曇り',bg:'linear-gradient(180deg,#78838e 0%,#a3adb5 55%,#c5ccd2 100%)'},
+ {n:'雨空',bg:'linear-gradient(180deg,#56606a 0%,#77818a 50%,#929ba3 100%)'},
+ {n:'夕焼け',bg:'linear-gradient(180deg,#4b4184 0%,#c5638b 38%,#f19c66 72%,#f9d39a 100%)'},
+ {n:'夜空',bg:'radial-gradient(circle at 18% 28%,rgba(255,255,255,.95) 0 1.2px,transparent 2.2px),radial-gradient(circle at 62% 18%,rgba(255,255,255,.9) 0 1px,transparent 2px),radial-gradient(circle at 80% 42%,rgba(255,255,255,.85) 0 1px,transparent 2px),radial-gradient(circle at 38% 55%,rgba(255,255,255,.8) 0 .9px,transparent 1.8px),radial-gradient(circle at 50% 36%,rgba(255,255,255,.9) 0 .8px,transparent 1.7px),radial-gradient(circle at 10% 60%,rgba(255,255,255,.8) 0 .9px,transparent 1.8px),linear-gradient(180deg,#0a1230 0%,#1a2958 60%,#35477c 100%)'},
+];
+const bgOf=e=>e.img?`url(${e.img})`:SKIES[e.sky].bg;
+
+/* 乱数（固定シード） */
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function pickSky(h,r){const x=r();if(h<7.5)return x<.65?0:1;if(h>=16.5&&h<19)return x<.6?6:(x<.8?1:4);if(h>=19)return 7;const w=[[1,.3],[2,.2],[3,.2],[4,.17],[5,.13]];let a=0;for(const[s,p]of w){a+=p;if(x<a)return s}return 1}
+
+/* 自分のカレンダー初期データ：過去2か月を飛び飛びで（直近12日は連続） */
+const r=rng(20261111);
+const gen={};
+for(let i=61;i>=1;i--){
+  const d=new Date(today);d.setDate(d.getDate()-i);
+  if(i<=12||(i!==13&&r()<0.6)){ /* 13日前は空けて連続記録を12日に */
+    const h=6+r()*14,hh=Math.floor(h),mm=Math.floor((h-hh)*60);
+    gen[key(d)]={sky:pickSky(h,r),time:`${hh}:${pad(mm)}`,place:r()<.82?'東京都 渋谷区':(r()<.5?'東京都 世田谷区':'神奈川県 鎌倉市'),b:+(0.95+r()*0.1).toFixed(2)};
+  }
+}
+let saved={};
+try{if(location.search.includes('reset'))localStorage.removeItem('sola-v1');saved=JSON.parse(localStorage.getItem('sola-v1')||'{}')}catch(e){}
+const mine={...gen,...saved};
+function persist(){try{localStorage.setItem('sola-v1',JSON.stringify(saved))}catch(e){}}
+
+/* みんなの空（今日・全国15件） */
+const FEED=[
+ ['那覇市','17:48',6],['福岡市','17:20',1],['広島市','16:55',2],['神戸市','16:10',1],['大阪市','15:42',3],
+ ['京都市','15:05',1],['名古屋市','14:30',2],['静岡市','13:48',1],['横浜市','12:55',3],['東京都 台東区','12:10',1],
+ ['長野市','11:20',4],['金沢市','10:35',5],['新潟市','9:12',4],['仙台市','7:40',3],['札幌市','6:05',0],
+];
+
+function streak(){let n=0,d=new Date(today);if(!mine[TK])d.setDate(d.getDate()-1);while(mine[key(d)]){n++;d.setDate(d.getDate()-1)}return n}
+
+/* 画面遷移 */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.screen===id));
+  $('#tabbar').hidden=document.getElementById(id).classList.contains('full');
+}
+function go(id){if(id==='s-cal')renderCal();if(id==='s-feed')renderFeed();show(id)}
+
+/* 今日 */
+function renderHome(){
+  const e=mine[TK],s=`🔥 ${streak()}日`,dt=fmtDate(today);
+  $('#home-date').textContent=dt;$('#home-streak').textContent=s;
+  $('#home-date2').textContent=dt;$('#home-streak2').textContent=s;
+  $('#home-empty').hidden=!!e;$('#home-taken').hidden=!e;
+  if(e){const h=$('#hero');h.style.backgroundImage=bgOf(e);h.style.filter=`brightness(${e.b||1})`;$('#hero-meta').textContent=`${e.time} · ${e.place}`}
+}
+
+/* 撮影 */
+let pending=null,vfSky=1;
+function openCapture(){
+  const n=new Date();vfSky=pickSky(n.getHours()+n.getMinutes()/60,Math.random);
+  $('#vf').style.backgroundImage=SKIES[vfSky].bg;
+  $('#cap-pill').textContent=mine[TK]?'今日の空を撮り直す':'今日の空（1日1枚）';
+  show('s-capture');
+}
+function shoot(){
+  const f=$('#flash');f.style.opacity=1;setTimeout(()=>f.style.opacity=0,120);
+  pending={sky:vfSky,b:1};
+  setTimeout(openConfirm,280);
+}
+function openConfirm(){
+  $('#cf-ph').style.backgroundImage=bgOf(pending);
+  $('#cf-pill').textContent=mine[TK]?'今日の空をこの空に置き換えますか？':'この空でいいですか？';
+  show('s-confirm');
+}
+function save(){
+  const n=new Date(),retake=!!mine[TK];
+  saved[TK]=mine[TK]={...pending,time:`${n.getHours()}:${pad(n.getMinutes())}`,place:'東京都 渋谷区'};
+  persist();renderHome();show('s-home');toast(retake?'今日の空を撮り直しました':'今日の空を残しました');
+}
+/* 実機：本物のカメラ */
+const isMobile=matchMedia('(pointer:coarse)').matches&&'ontouchstart' in window;
+$('#cam-btn').hidden=!isMobile;
+$('#file').addEventListener('change',ev=>{
+  const file=ev.target.files[0];if(!file)return;
+  const img=new Image();const url=URL.createObjectURL(file);
+  img.onload=()=>{
+    const max=1200,sc=Math.min(1,max/Math.max(img.width,img.height));
+    const c=document.createElement('canvas');c.width=img.width*sc;c.height=img.height*sc;
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    pending={img:c.toDataURL('image/jpeg',.82),b:1};
+    URL.revokeObjectURL(url);ev.target.value='';openConfirm();
+  };
+  img.src=url;
+});
+
+/* カレンダー */
+let mode='month',cy=today.getFullYear(),cm=today.getMonth();
+function setMode(m){mode=m;$('#seg-m').classList.toggle('on',m==='month');$('#seg-y').classList.toggle('on',m==='year');renderCal()}
+function navCal(d){if(mode==='month'){cm+=d;if(cm<0){cm=11;cy--}if(cm>11){cm=0;cy++}}else cy+=d;renderCal()}
+const dim=(y,m)=>new Date(y,m+1,0).getDate();
+function cellOf(y,m,d,cls){
+  const dt=new Date(y,m,d),k=key(dt),e=mine[k],fut=dt>today;
+  const c=document.createElement(e?'button':'div');
+  c.className=cls+(e?' has':'')+(fut?' future':'')+(k===TK?' today':'');
+  if(e){c.style.backgroundImage=bgOf(e);c.style.filter=`brightness(${e.b||1})`;c.onclick=()=>openDetail(k);c.setAttribute('aria-label',fmtDate(dt,true))}
+  return c;
+}
+function renderCal(){
+  const box=$('#cal-content');box.innerHTML='';
+  if(mode==='month'){
+    const n=dim(cy,cm),cnt=Array.from({length:n},(_,i)=>mine[key(new Date(cy,cm,i+1))]).filter(Boolean).length;
+    $('#cal-title').innerHTML=`${cy}年${cm+1}月<small>${cnt} / ${n} 日</small>`;
+    const wd=document.createElement('div');wd.className='wd';wd.innerHTML=WD.map(w=>`<span>${w}</span>`).join('');box.appendChild(wd);
+    const g=document.createElement('div');g.className='grid';
+    for(let i=0;i<new Date(cy,cm,1).getDay();i++)g.appendChild(document.createElement('div'));
+    for(let d=1;d<=n;d++){const c=cellOf(cy,cm,d,'cell');const s=document.createElement('span');s.textContent=d;c.appendChild(s);g.appendChild(c)}
+    box.appendChild(g);
+  }else{
+    let total=0;
+    $('#cal-title').textContent=`${cy}年`;
+    const yg=document.createElement('div');yg.className='ygrid';
+    for(let m=0;m<12;m++){
+      const ym=document.createElement('div');ym.className='ym';
+      const b=document.createElement('b');b.textContent=`${m+1}月`;ym.appendChild(b);
+      const g=document.createElement('div');g.className='g';
+      for(let i=0;i<new Date(cy,m,1).getDay();i++){const t=document.createElement('div');t.className='tile none';g.appendChild(t)}
+      for(let d=1;d<=dim(cy,m);d++){const t=cellOf(cy,m,d,'tile');if(t.classList.contains('has'))total++;g.appendChild(t)}
+      ym.appendChild(g);yg.appendChild(ym);
+    }
+    box.appendChild(yg);
+    const s=document.createElement('p');s.className='sum';s.textContent=`${cy}年に残した空：${total}日`;box.appendChild(s);
+  }
+}
+/* スワイプで月／年切替 */
+let sx=null;
+$('#cal-body').addEventListener('touchstart',e=>{sx=e.touches[0].clientX},{passive:true});
+$('#cal-body').addEventListener('touchend',e=>{if(sx===null)return;const dx=e.changedTouches[0].clientX-sx;sx=null;if(Math.abs(dx)>50)navCal(dx<0?1:-1)});
+
+/* 詳細シート */
+function openDetail(k){
+  const e=mine[k],d=parse(k),p=$('#dt-ph');
+  p.style.backgroundImage=bgOf(e);p.style.filter=`brightness(${e.b||1})`;
+  $('#dt-date').textContent=fmtDate(d,true);$('#dt-meta').textContent=`${e.time} · ${e.place}`;
+  $('#detail').classList.add('open');
+}
+function closeDetail(){$('#detail').classList.remove('open')}
+
+/* みんなの空 */
+function renderFeed(){
+  const sc=$('#s-feed');sc.classList.toggle('locked',!mine[TK]);
+  $('#feed-date').textContent=fmtDate(today);
+  $('#feed-body').innerHTML=FEED.map(([city,t,s])=>`
+    <div class="card"><div class="ph-wrap"><div class="ph" style="background-image:${SKIES[s].bg}"></div></div>
+    <div class="meta"><b>${city}</b><span>${t}</span></div></div>`).join('');
+}
+
+/* トースト */
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)}
+
+/* PCでは高さに合わせて縮小 */
+function fit(){const p=$('#phone');if(innerWidth>=600){p.style.transform=`scale(${Math.min(1,(innerHeight-32)/864)})`}else p.style.transform=''}
+addEventListener('resize',fit);fit();
+
+renderHome();
+</script>
+</body>
+</html>
